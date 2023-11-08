@@ -16,47 +16,57 @@ const fs = require('fs');
 fs.readFile('result.html', 'utf8', function (err, data) {
   let $ = cheerio.load(data);
 
-  let _listOfProductIds = [];
-  $('div[data-asin]').each(function (i, elem) {
-    _listOfProductIds.push($(this).attr('data-asin'));
-  });
-
-  let _listOfProductDivs = [];
-  let _listOfRawProductNames = [];
-  let _listOfProductStars = [];
+  let _listOfProducts = [];
 
   $('div[data-asin]').each(function (i, elem) {
-    _listOfProductDivs.push($(this).html());
+    if ($(this).attr('data-asin') != '') {
+      let _product = {
+        name: '',
+        stars: '',
+        reviews: 0,
+        imageUrl: '',
+      };
 
-    let $$ = cheerio.load($(this).html());
-    let beginIndex = $$.html().indexOf(
-      '<span class="a-size-base-plus a-color-base a-text-normal">'
-    );
-    if (beginIndex > 0) {
-      beginIndex += 58;
-      let endIndex =
-        beginIndex +
-        $$.html().substring(beginIndex, $$.html().length).indexOf('</span>');
-      let rawProductName = $$.html()
-        .substring(beginIndex, endIndex)
-        .replace(/\n/g, '');
-      _listOfRawProductNames.push(removeUnnecessaryWhiteSpaces(rawProductName));
-      //   console.log(`[${i}]: ${rawProductName}`);
+      let $$ = cheerio.load($(this).html());
 
-      let productStars = searchAndExtractInnerText(
+      _product.name = removeUnnecessaryWhiteSpaces(
+        searchAndExtractInnerText(
+          $$.html(),
+          '<span class="a-size-base-plus a-color-base a-text-normal">',
+          '</span>'
+        ).replace(/\n/g, '')
+      );
+      console.log(_product.name);
+
+      _product.stars = removeUnnecessaryWhiteSpaces(
+        searchAndExtractInnerText(
+          $$.html(),
+          '<span class="a-icon-alt">',
+          '</span>'
+        ).replace(/\n/g, '')
+      );
+      console.log(_product.stars);
+
+      _product.reviews = Number(
+        searchAndExtractInnerText(
+          $$.html(),
+          '<span class="a-size-base s-underline-text">',
+          '</span>'
+        ).replace(',', '')
+      );
+      console.log(_product.reviews);
+
+      _product.imageUrl = searchAndExtractInnerText(
         $$.html(),
-        '<span class="a-icon-alt">',
-        '</span>'
+        '<img class="s-image" src="',
+        '"'
       );
-      _listOfProductStars.push(
-        removeUnnecessaryWhiteSpaces(productStars.replace(/\n/g, ''))
-      );
+      console.log(_product.imageUrl);
+      console.log('----------------------');
+      _listOfProducts.push(_product);
     }
   });
-
-  //   console.log(_listOfProductDivs[1]);
-  //   console.log(_listOfRawProductNames);
-  console.log(_listOfProductStars);
+  console.log(_listOfProducts);
 });
 
 async function getHTML(productURL) {
