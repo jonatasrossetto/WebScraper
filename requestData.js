@@ -9,16 +9,18 @@ const port = 3000;
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-let listOfProducts = [];
-fs.readFile('result.html', 'utf8', function (err, data) {
-  listOfProducts = extractListOfProducts(data);
-  console.log(listOfProducts);
-});
+// let listOfProducts = [];
+// fs.readFile('result.html', 'utf8', function (err, data) {
+//   listOfProducts = extractListOfProducts(data);
+//   console.log(listOfProducts);
+// });
 
-app.get('/api/scrape', (req, res) => {
+app.get('/api/scrape', async (req, res) => {
   let keyword = req.query.keyword;
   console.log('keyword: ' + keyword);
-  res.send(listOfProducts);
+  lista = await searchAndExtractFromWeb(keyword);
+  console.log(lista);
+  res.send(lista);
 });
 
 app.listen(port, () => {
@@ -112,6 +114,8 @@ function searchProductImageUrl(htmlCode) {
 
 function extractListOfProducts(htmlCode) {
   let _listOfProducts = [];
+  console.log('**********************************************************');
+  console.log(htmlCode);
   let $ = cheerio.load(htmlCode);
 
   $('div[data-asin]').each(function (i, elem) {
@@ -126,15 +130,23 @@ function extractListOfProducts(htmlCode) {
       let htmlCode = cheerio.load($(this).html()).html();
 
       _product.name = searchProductName(htmlCode);
-
       _product.stars = searchProductReviewStars(htmlCode);
-
       _product.reviews = searchProductNumberOfReviews(htmlCode);
-
       _product.imageUrl = searchProductImageUrl(htmlCode);
 
       _listOfProducts.push(_product);
     }
   });
   return _listOfProducts;
+}
+
+async function searchAndExtractFromWeb(keyword) {
+  keyword = keyword.replace(' ', '+');
+  let url = 'https://www.amazon.com/s?k=' + keyword;
+  let lista;
+
+  let result = await getHTML(url).then((htmlCode) => {
+    return extractListOfProducts(htmlCode);
+  });
+  return result;
 }
