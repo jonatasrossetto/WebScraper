@@ -1,6 +1,23 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const fs = require('fs');
+const bodyParser = require('body-parser');
+
+const express = require('express');
+const app = express();
+const port = 3000;
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+
+app.get('/api/scrape', (req, res) => {
+  let keyword = req.query.keyword;
+  console.log('keyword: ' + keyword);
+  res.send(_listOfProducts);
+});
+
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+});
 
 // let result = getHTML('https://www.amazon.com/s?k=nespresso+maker').then(
 //   (result) => {
@@ -13,10 +30,10 @@ const fs = require('fs');
 //   }
 // );
 
+let _listOfProducts = [];
+
 fs.readFile('result.html', 'utf8', function (err, data) {
   let $ = cheerio.load(data);
-
-  let _listOfProducts = [];
 
   $('div[data-asin]').each(function (i, elem) {
     if ($(this).attr('data-asin') != '') {
@@ -36,7 +53,7 @@ fs.readFile('result.html', 'utf8', function (err, data) {
           '</span>'
         ).replace(/\n/g, '')
       );
-      console.log(_product.name);
+      //   console.log(_product.name);
 
       _product.stars = removeUnnecessaryWhiteSpaces(
         searchAndExtractInnerText(
@@ -45,7 +62,7 @@ fs.readFile('result.html', 'utf8', function (err, data) {
           '</span>'
         ).replace(/\n/g, '')
       );
-      console.log(_product.stars);
+      //   console.log(_product.stars);
 
       _product.reviews = Number(
         searchAndExtractInnerText(
@@ -54,19 +71,19 @@ fs.readFile('result.html', 'utf8', function (err, data) {
           '</span>'
         ).replace(',', '')
       );
-      console.log(_product.reviews);
+      //   console.log(_product.reviews);
 
       _product.imageUrl = searchAndExtractInnerText(
         $$.html(),
         '<img class="s-image" src="',
         '"'
       );
-      console.log(_product.imageUrl);
-      console.log('----------------------');
+      //   console.log(_product.imageUrl);
+      //   console.log('----------------------');
       _listOfProducts.push(_product);
     }
   });
-  console.log(_listOfProducts);
+  //   console.log(_listOfProducts);
 });
 
 async function getHTML(productURL) {
