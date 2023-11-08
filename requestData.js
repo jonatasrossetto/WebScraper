@@ -9,10 +9,16 @@ const port = 3000;
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+let listOfProducts = [];
+fs.readFile('result.html', 'utf8', function (err, data) {
+  listOfProducts = extractListOfProducts(data);
+  console.log(listOfProducts);
+});
+
 app.get('/api/scrape', (req, res) => {
   let keyword = req.query.keyword;
   console.log('keyword: ' + keyword);
-  res.send(_listOfProducts);
+  res.send(listOfProducts);
 });
 
 app.listen(port, () => {
@@ -30,62 +36,6 @@ app.listen(port, () => {
 //   }
 // );
 
-let _listOfProducts = [];
-
-fs.readFile('result.html', 'utf8', function (err, data) {
-  let $ = cheerio.load(data);
-
-  $('div[data-asin]').each(function (i, elem) {
-    if ($(this).attr('data-asin') != '') {
-      let _product = {
-        name: '',
-        stars: '',
-        reviews: 0,
-        imageUrl: '',
-      };
-
-      let $$ = cheerio.load($(this).html());
-
-      _product.name = removeUnnecessaryWhiteSpaces(
-        searchAndExtractInnerText(
-          $$.html(),
-          '<span class="a-size-base-plus a-color-base a-text-normal">',
-          '</span>'
-        ).replace(/\n/g, '')
-      );
-      //   console.log(_product.name);
-
-      _product.stars = removeUnnecessaryWhiteSpaces(
-        searchAndExtractInnerText(
-          $$.html(),
-          '<span class="a-icon-alt">',
-          '</span>'
-        ).replace(/\n/g, '')
-      );
-      //   console.log(_product.stars);
-
-      _product.reviews = Number(
-        searchAndExtractInnerText(
-          $$.html(),
-          '<span class="a-size-base s-underline-text">',
-          '</span>'
-        ).replace(',', '')
-      );
-      //   console.log(_product.reviews);
-
-      _product.imageUrl = searchAndExtractInnerText(
-        $$.html(),
-        '<img class="s-image" src="',
-        '"'
-      );
-      //   console.log(_product.imageUrl);
-      //   console.log('----------------------');
-      _listOfProducts.push(_product);
-    }
-  });
-  //   console.log(_listOfProducts);
-});
-
 async function getHTML(productURL) {
   const { data: html } = await axios
     .get(productURL, {
@@ -98,28 +48,6 @@ async function getHTML(productURL) {
       console.log(error);
     });
   return html;
-}
-
-function removeBeginingWhiteSpace(text) {
-  let beginIndex = 0;
-  for (let i = 0; i < text.length; i++) {
-    if (text[i] != ' ') {
-      beginIndex = i;
-      break;
-    }
-  }
-  return text.substring(beginIndex, text.length);
-}
-
-function removeEndWhiteSpace(text) {
-  let endIndex = 0;
-  for (let i = text.length - 1; i >= 0; i--) {
-    if (text[i] != ' ') {
-      endIndex = i;
-      break;
-    }
-  }
-  return text.substring(0, endIndex + 1);
 }
 
 function removeUnnecessaryWhiteSpaces(text) {
@@ -146,4 +74,67 @@ function searchAndExtractInnerText(text, beginDelimiter, endDelimiter) {
   let endIndex =
     beginIndex + text.substring(beginIndex, text.length).indexOf(endDelimiter);
   return text.substring(beginIndex, endIndex);
+}
+
+function searchProductName(htmlCode) {
+  return removeUnnecessaryWhiteSpaces(
+    searchAndExtractInnerText(
+      htmlCode,
+      '<span class="a-size-base-plus a-color-base a-text-normal">',
+      '</span>'
+    ).replace(/\n/g, '')
+  );
+}
+
+function searchProductReviewStars(htmlCode) {
+  return removeUnnecessaryWhiteSpaces(
+    searchAndExtractInnerText(
+      htmlCode,
+      '<span class="a-icon-alt">',
+      '</span>'
+    ).replace(/\n/g, '')
+  );
+}
+
+function searchProductNumberOfReviews(htmlCode) {
+  return Number(
+    searchAndExtractInnerText(
+      htmlCode,
+      '<span class="a-size-base s-underline-text">',
+      '</span>'
+    ).replace(',', '')
+  );
+}
+
+function searchProductImageUrl(htmlCode) {
+  return searchAndExtractInnerText(htmlCode, '<img class="s-image" src="', '"');
+}
+
+function extractListOfProducts(htmlCode) {
+  let _listOfProducts = [];
+  let $ = cheerio.load(htmlCode);
+
+  $('div[data-asin]').each(function (i, elem) {
+    if ($(this).attr('data-asin') != '') {
+      let _product = {
+        name: '',
+        stars: '',
+        reviews: 0,
+        imageUrl: '',
+      };
+
+      let htmlCode = cheerio.load($(this).html()).html();
+
+      _product.name = searchProductName(htmlCode);
+
+      _product.stars = searchProductReviewStars(htmlCode);
+
+      _product.reviews = searchProductNumberOfReviews(htmlCode);
+
+      _product.imageUrl = searchProductImageUrl(htmlCode);
+
+      _listOfProducts.push(_product);
+    }
+  });
+  return _listOfProducts;
 }
