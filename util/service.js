@@ -1,9 +1,10 @@
 const axios = require('axios'); // Promise based HTTP client for the browser and node.js
 const cheerio = require('cheerio'); // Fast, flexible, and lean implementation of core jQuery designed specifically for the server.
+const express = require('express');
 
 // Get the HTML code from the given URL
 // returns a string
-async function getHTML(URL) {
+let getHTML = async function (URL) {
   try {
     const { data: html } = await axios
       .get(URL, {
@@ -20,11 +21,11 @@ async function getHTML(URL) {
     console.error('Error: ' + error);
     return null;
   }
-}
+};
 
 // Remove the unnecessary white spaces inside text string
 // Returns a string
-function removeUnnecessaryWhiteSpaces(text) {
+let removeUnnecessaryWhiteSpaces = function (text) {
   let result = '';
   let isSpace = false;
   for (let i = 0; i < text.length; i++) {
@@ -39,21 +40,21 @@ function removeUnnecessaryWhiteSpaces(text) {
     }
   }
   return result;
-}
+};
 
 // Search into text string for the sub-text between the strings beginDelimiter and endDelimiter
 // returns a string
-function searchAndExtractInnerText(text, beginDelimiter, endDelimiter) {
+let searchAndExtractInnerText = function (text, beginDelimiter, endDelimiter) {
   let beginIndex = text.indexOf(beginDelimiter);
   if (beginIndex < 0) return null;
   beginIndex += beginDelimiter.length;
   let endIndex =
     beginIndex + text.substring(beginIndex, text.length).indexOf(endDelimiter);
   return text.substring(beginIndex, endIndex);
-}
+};
 
 //
-function searchProductName(htmlCode) {
+let searchProductName = function (htmlCode) {
   let searchText = null;
   let textFromMultipleColumns = searchAndExtractInnerText(
     htmlCode,
@@ -79,9 +80,9 @@ function searchProductName(htmlCode) {
   // console.log('searchText: ' + searchText);
 
   return removeUnnecessaryWhiteSpaces(searchText.replace(/\n/g, ''));
-}
+};
 
-function searchProductReviewStars(htmlCode) {
+let searchProductReviewStars = function (htmlCode) {
   let textSearchResult = searchAndExtractInnerText(
     htmlCode,
     '<span class="a-icon-alt">',
@@ -91,9 +92,9 @@ function searchProductReviewStars(htmlCode) {
     return null;
   }
   return removeUnnecessaryWhiteSpaces(textSearchResult.replace(/\n/g, ''));
-}
+};
 
-function searchProductNumberOfReviews(htmlCode) {
+let searchProductNumberOfReviews = function (htmlCode) {
   let textSearchResult = searchAndExtractInnerText(
     htmlCode,
     '<span class="a-size-base s-underline-text">',
@@ -103,13 +104,13 @@ function searchProductNumberOfReviews(htmlCode) {
     return null;
   }
   return Number(textSearchResult.replace(',', ''));
-}
+};
 
-function searchProductImageUrl(htmlCode) {
+let searchProductImageUrl = function (htmlCode) {
   return searchAndExtractInnerText(htmlCode, '<img class="s-image" src="', '"');
-}
+};
 
-function extractListOfProducts(htmlCode) {
+let extractListOfProducts = function (htmlCode) {
   let _listOfProducts = [];
   // console.log('**********************************************************');
 
@@ -147,9 +148,9 @@ function extractListOfProducts(htmlCode) {
     }
   });
   return _listOfProducts;
-}
+};
 
-async function searchAndExtractFromWeb(keyword) {
+exports.searchAndExtractFromWeb = async function (keyword) {
   keyword = keyword.replace(' ', '+');
   let url = 'https://www.amazon.com/s?k=' + keyword;
   let lista;
@@ -159,6 +160,4 @@ async function searchAndExtractFromWeb(keyword) {
     return await extractListOfProducts(htmlCode);
   });
   return result;
-}
-
-export function searchAndExtractFromWeb();
+};
