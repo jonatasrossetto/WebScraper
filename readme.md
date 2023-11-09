@@ -1,4 +1,4 @@
-# Simple Web Scrapper to amazon.com
+# Simple Web Scraper to amazon.com
 
 Code challenge for the application to a Full Stack Developer Internship
 at Carvalho Aleixo Inc.<br>
