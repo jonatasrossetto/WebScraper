@@ -19,10 +19,15 @@ app.listen(port, () => {
 //deals with http GET request to the endpoint /api/scrape
 //extract the search keywords using request.query
 app.get('/api/scrape', async (req, res) => {
-  let keyword = req.query.keyword;
-  console.log('/api/scrape/keyword: ' + keyword);
-  lista = await searchAndExtractFromWeb(keyword);
-  res.send(lista);
+  try {
+    let keyword = req.query.keyword;
+    console.log('/api/scrape/keyword: ' + keyword);
+    lista = await searchAndExtractFromWeb(keyword);
+    res.send(lista);
+  } catch (error) {
+    console.log('Error: ' + error);
+    res.send('Error: ' + error);
+  }
 });
 
 // Get the HTML code from the given URL
