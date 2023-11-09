@@ -2,12 +2,14 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const fs = require('fs');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const express = require('express');
 const app = express();
 const port = 3000;
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(cors());
 
 // let listOfProducts = [];
 // fs.readFile('result.html', 'utf8', function (err, data) {
@@ -79,6 +81,7 @@ function searchAndExtractInnerText(text, beginDelimiter, endDelimiter) {
 }
 
 function searchProductName(htmlCode) {
+  let searchText = null;
   let textFromMultipleColumns = searchAndExtractInnerText(
     htmlCode,
     '<span class="a-size-base-plus a-color-base a-text-normal">',
@@ -89,36 +92,44 @@ function searchProductName(htmlCode) {
     '<span class="a-size-medium a-color-base a-text-normal">',
     '</span>'
   );
-  console.log('textFromMultipleColumns: ' + textFromMultipleColumns);
-  console.log('textFromSingleColumn: ' + textFromSingleColumn);
+  // console.log('textFromMultipleColumns: ' + textFromMultipleColumns);
+  // console.log('textFromSingleColumn: ' + textFromSingleColumn);
+  if (textFromMultipleColumns != null) {
+    searchText = textFromMultipleColumns;
+  }
+  if (textFromSingleColumn != null) {
+    searchText = textFromSingleColumn;
+  }
+  if (searchText == null) {
+    return null;
+  }
+  // console.log('searchText: ' + searchText);
 
-  return removeUnnecessaryWhiteSpaces(
-    searchAndExtractInnerText(
-      htmlCode,
-      '<span class="a-size-base-plus a-color-base a-text-normal">',
-      '</span>'
-    ).replace(/\n/g, '')
-  );
+  return removeUnnecessaryWhiteSpaces(searchText.replace(/\n/g, ''));
 }
 
 function searchProductReviewStars(htmlCode) {
-  return removeUnnecessaryWhiteSpaces(
-    searchAndExtractInnerText(
-      htmlCode,
-      '<span class="a-icon-alt">',
-      '</span>'
-    ).replace(/\n/g, '')
+  let textSearchResult = searchAndExtractInnerText(
+    htmlCode,
+    '<span class="a-icon-alt">',
+    '</span>'
   );
+  if (textSearchResult == null) {
+    return null;
+  }
+  return removeUnnecessaryWhiteSpaces(textSearchResult.replace(/\n/g, ''));
 }
 
 function searchProductNumberOfReviews(htmlCode) {
-  return Number(
-    searchAndExtractInnerText(
-      htmlCode,
-      '<span class="a-size-base s-underline-text">',
-      '</span>'
-    ).replace(',', '')
+  let textSearchResult = searchAndExtractInnerText(
+    htmlCode,
+    '<span class="a-size-base s-underline-text">',
+    '</span>'
   );
+  if (textSearchResult == null) {
+    return null;
+  }
+  return Number(textSearchResult.replace(',', ''));
 }
 
 function searchProductImageUrl(htmlCode) {
@@ -127,18 +138,18 @@ function searchProductImageUrl(htmlCode) {
 
 function extractListOfProducts(htmlCode) {
   let _listOfProducts = [];
-  console.log('**********************************************************');
+  // console.log('**********************************************************');
 
   let $ = cheerio.load(htmlCode);
 
-  console.log($('div[data-asin]'));
+  // console.log($('div[data-asin]'));
 
   $('div[data-asin]').each(function (i, elem) {
     if ($(this).attr('data-asin') != '') {
       let atributo = $(this).attr('data-asin');
-      console.log('atributo.attribs ' + atributo.attribs);
+      // console.log('atributo.attribs ' + atributo.attribs);
       if (atributo.attribs == undefined) {
-        console.log(atributo);
+        // console.log(atributo);
         let _product = {
           name: '',
           stars: '',
@@ -147,13 +158,14 @@ function extractListOfProducts(htmlCode) {
         };
 
         let htmlCode = cheerio.load($(this).html()).html();
-
-        _product.name = searchProductName(htmlCode);
-        _product.stars = searchProductReviewStars(htmlCode);
-        _product.reviews = searchProductNumberOfReviews(htmlCode);
-        _product.imageUrl = searchProductImageUrl(htmlCode);
-
-        _listOfProducts.push(_product);
+        let __productName = searchProductName(htmlCode);
+        if (__productName != null) {
+          _product.name = __productName;
+          _product.stars = searchProductReviewStars(htmlCode);
+          _product.reviews = searchProductNumberOfReviews(htmlCode);
+          _product.imageUrl = searchProductImageUrl(htmlCode);
+          _listOfProducts.push(_product);
+        }
       }
     }
   });
