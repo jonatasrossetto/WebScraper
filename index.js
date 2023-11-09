@@ -34,7 +34,7 @@ btnSearch.addEventListener('click', function (e) {
       let html = '';
       // Loop through the results and create the HTML code for the table
       data.forEach((element) => {
-        html += `<tr><td class="col-2"> <img src="${element.imageUrl}" class="img-thumbnail" style="width:5rem ;">'</td>'`;
+        html += `<tr><td class="col-2"> <img src="${element.imageUrl}" class="img-thumbnail" style="height:5rem ;">'</td>'`;
         html += '<td class="col-6">' + element.name + '</td>';
         html += '<td class="col-2">' + element.stars + '</td>';
         html += '<td class="col-2">' + element.reviews + '</td></tr>';
