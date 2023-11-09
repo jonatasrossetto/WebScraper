@@ -9,16 +9,17 @@ const port = 3000;
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-// let listOfProducts = [];
-// fs.readFile('result.html', 'utf8', function (err, data) {
-//   listOfProducts = extractListOfProducts(data);
-//   console.log(listOfProducts);
-// });
+let listOfProducts = [];
+fs.readFile('result.html', 'utf8', function (err, data) {
+  listOfProducts = extractListOfProducts(data);
+  console.log(listOfProducts);
+});
 
 app.get('/api/scrape', async (req, res) => {
   let keyword = req.query.keyword;
   console.log('keyword: ' + keyword);
-  lista = await searchAndExtractFromWeb(keyword);
+  // lista = await searchAndExtractFromWeb(keyword);
+  lista = listOfProducts;
   console.log(lista);
   res.send(lista);
 });
@@ -79,6 +80,7 @@ function searchAndExtractInnerText(text, beginDelimiter, endDelimiter) {
 }
 
 function searchProductName(htmlCode) {
+  let searchText = null;
   let textFromMultipleColumns = searchAndExtractInnerText(
     htmlCode,
     '<span class="a-size-base-plus a-color-base a-text-normal">',
@@ -91,14 +93,18 @@ function searchProductName(htmlCode) {
   );
   console.log('textFromMultipleColumns: ' + textFromMultipleColumns);
   console.log('textFromSingleColumn: ' + textFromSingleColumn);
+  if (textFromMultipleColumns != null) {
+    searchText = textFromMultipleColumns;
+  }
+  if (textFromSingleColumn != null) {
+    searchText = textFromSingleColumn;
+  }
+  if (searchText == null) {
+    return null;
+  }
+  console.log('searchText: ' + searchText);
 
-  return removeUnnecessaryWhiteSpaces(
-    searchAndExtractInnerText(
-      htmlCode,
-      '<span class="a-size-base-plus a-color-base a-text-normal">',
-      '</span>'
-    ).replace(/\n/g, '')
-  );
+  return removeUnnecessaryWhiteSpaces(searchText.replace(/\n/g, ''));
 }
 
 function searchProductReviewStars(htmlCode) {
