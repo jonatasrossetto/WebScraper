@@ -1,7 +1,6 @@
 # Simple Web Scraper to amazon.com
 
-Code challenge for the application to a Full Stack Developer Internship
-at Carvalho Aleixo Inc.<br>
+Code challenge for the application to a Full Stack Developer Internship<br>
 
 Back-end Stack
 
